@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>RootA Manager v5</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">店舗管理</p>
+      <h1>RootA Manager v5</h1>
+    </div>
+    <div id="syncStatus" class="status">確認中</div>
+  </header>
+
+  <main class="container">
+    <section class="card store-card">
+      <label for="storeSelect">店舗</label>
+      <select id="storeSelect"></select>
+    </section>
+
+    <nav class="tabs" aria-label="画面切替">
+      <button class="tab active" data-tab="casts">キャスト管理</button>
+      <button class="tab" data-tab="shifts">出勤管理</button>
+    </nav>
+
+    <section id="castsPanel" class="panel active">
+      <div class="section-heading">
+        <div>
+          <h2>キャスト管理</h2>
+          <p>店舗ごとにキャストを登録・編集できます。</p>
+        </div>
+        <button id="addCastButton" class="primary">＋ キャスト追加</button>
+      </div>
+      <div id="castsList" class="list"></div>
+      <div id="castsEmpty" class="empty hidden">まだキャストが登録されていません。</div>
+    </section>
+
+    <section id="shiftsPanel" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>出勤管理</h2>
+          <p>日付を選び、出勤時間を登録します。</p>
+        </div>
+      </div>
+
+      <div class="shift-toolbar card">
+        <label>
+          日付
+          <input id="shiftDate" type="date">
+        </label>
+        <button id="addShiftButton" class="primary">＋ 出勤追加</button>
+      </div>
+
+      <div id="shiftsList" class="list"></div>
+      <div id="shiftsEmpty" class="empty hidden">この日の出勤登録はありません。</div>
+    </section>
+  </main>
+
+  <dialog id="castDialog">
+    <form id="castForm" method="dialog">
+      <h3 id="castDialogTitle">キャスト追加</h3>
+      <input id="castId" type="hidden">
+      <label>
+        キャスト名
+        <input id="castName" maxlength="40" required placeholder="例：あおい">
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close="castDialog">キャンセル</button>
+        <button type="submit" class="primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="shiftDialog">
+    <form id="shiftForm" method="dialog">
+      <h3>出勤追加</h3>
+      <label>
+        キャスト
+        <select id="shiftCast" required></select>
+      </label>
+      <div class="time-grid">
+        <label>
+          出勤
+          <input id="shiftStart" type="time" required>
+        </label>
+        <label>
+          退勤
+          <input id="shiftEnd" type="time">
+        </label>
+      </div>
+      <label>
+        メモ
+        <input id="shiftMemo" maxlength="100" placeholder="任意">
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close="shiftDialog">キャンセル</button>
+        <button type="submit" class="primary">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
