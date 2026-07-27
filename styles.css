@@ -78,21 +78,3 @@ dialog form { display: grid; gap: 15px; padding: 20px; }
   .row-actions { width: 100%; }
   .row-actions button { flex: 1; }
 }
-.cast-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.row-main {
-  display: flex;
-  align-items: center;
-}
-
-.row-title,
-.row-sub {
-  display: block;
-}
