@@ -351,3 +351,22 @@ dialog form {
     flex: 1;
   }
 }
+.shift-photo-card {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+
+.shift-photo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+}
+
+.shift-photo-card > * {
+  position: relative;
+  z-index: 1;
+}
