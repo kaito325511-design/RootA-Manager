@@ -32,10 +32,11 @@
       <div class="section-heading">
         <div>
           <h2>キャスト管理</h2>
-          <p>店舗ごとにキャストを登録・編集できます。</p>
+          <p>店舗ごとにキャストと写真を登録・編集できます。</p>
         </div>
         <button id="addCastButton" class="primary">＋ キャスト追加</button>
       </div>
+
       <div id="castsList" class="list"></div>
       <div id="castsEmpty" class="empty hidden">まだキャストが登録されていません。</div>
     </section>
@@ -65,10 +66,24 @@
     <form id="castForm" method="dialog">
       <h3 id="castDialogTitle">キャスト追加</h3>
       <input id="castId" type="hidden">
+
       <label>
         キャスト名
         <input id="castName" maxlength="40" required placeholder="例：あおい">
       </label>
+
+      <label>
+        写真
+        <input id="castPhoto" type="file" accept="image/*">
+      </label>
+
+      <div class="photo-preview-wrap">
+        <img id="castPhotoPreview" class="photo-preview hidden" alt="写真プレビュー">
+        <button id="removePhotoButton" type="button" class="secondary hidden">写真を削除</button>
+      </div>
+
+      <p class="hint">写真は自動で縮小して保存します。</p>
+
       <div class="dialog-actions">
         <button type="button" class="secondary" data-close="castDialog">キャンセル</button>
         <button type="submit" class="primary">保存</button>
@@ -79,24 +94,29 @@
   <dialog id="shiftDialog">
     <form id="shiftForm" method="dialog">
       <h3>出勤追加</h3>
+
       <label>
         キャスト
         <select id="shiftCast" required></select>
       </label>
+
       <div class="time-grid">
         <label>
           出勤
           <input id="shiftStart" type="time" required>
         </label>
+
         <label>
           退勤
           <input id="shiftEnd" type="time">
         </label>
       </div>
+
       <label>
         メモ
         <input id="shiftMemo" maxlength="100" placeholder="任意">
       </label>
+
       <div class="dialog-actions">
         <button type="button" class="secondary" data-close="shiftDialog">キャンセル</button>
         <button type="submit" class="primary">保存</button>
