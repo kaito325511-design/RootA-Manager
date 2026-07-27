@@ -5,9 +5,9 @@ const state = {
   casts: [],
   shifts: [],
   db: null,
-  online: false
+  online: false,
+  pendingPhoto: null
 };
-
 function uid() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 }
@@ -26,7 +26,55 @@ function setStatus(text, mode) {
 function escapeHtml(value="") {
   return value.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+async function imageFileToDataUrl(file) {
+  const original = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
+  const image = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = original;
+  });
+
+  const maxSize = 700;
+  const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(image.width * scale);
+  canvas.height = Math.round(image.height * scale);
+
+  canvas.getContext("2d").drawImage(
+    image,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  return canvas.toDataURL("image/jpeg", 0.78);
+}
+
+function updatePhotoPreview(photoData) {
+  state.pendingPhoto = photoData || null;
+
+  const preview = $("castPhotoPreview");
+  const removeButton = $("removePhotoButton");
+
+  if (state.pendingPhoto) {
+    preview.src = state.pendingPhoto;
+    preview.classList.remove("hidden");
+    removeButton.classList.remove("hidden");
+  } else {
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+    removeButton.classList.add("hidden");
+  }
+}
 async function initDb() {
   const cfg = window.ROOTA_CONFIG || {};
   if (!cfg.SUPABASE_URL || !cfg.SUPABASE_KEY) {
@@ -115,6 +163,7 @@ function renderCasts() {
   $("castsList").innerHTML = casts.map(c => `
     <article class="row">
       <div class="row-main">
+      ${c.photo_data ? `<img class="cast-thumb" src="${c.photo_data}" alt="">` : ""}
         <div class="row-title">${escapeHtml(c.name)}</div>
         <div class="row-sub">${escapeHtml(c.store_id)}</div>
       </div>
@@ -157,10 +206,38 @@ function openCastDialog(cast=null) {
   $("castDialogTitle").textContent = cast ? "キャスト編集" : "キャスト追加";
   $("castId").value = cast?.id || "";
   $("castName").value = cast?.name || "";
+
+  updatePhotoPreview(cast?.photo_data || null);
+
+  $("castPhoto").value = "";
+
   $("castDialog").showModal();
   setTimeout(() => $("castName").focus(), 50);
 }
 
+$("castPhoto").addEventListener("change", async () => {
+  const file = $("castPhoto").files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    alert("画像ファイルを選んでください。");
+    $("castPhoto").value = "";
+    return;
+  }
+
+  try {
+    const photoData = await imageFileToDataUrl(file);
+    updatePhotoPreview(photoData);
+  } catch (error) {
+    console.error(error);
+    alert("写真を読み込めませんでした。");
+  }
+});
+
+$("removePhotoButton").addEventListener("click", () => {
+  $("castPhoto").value = "";
+  updatePhotoPreview(null);
+});
 document.addEventListener("click", async (event) => {
   const tab = event.target.closest("[data-tab]");
   if (tab) {
@@ -215,6 +292,7 @@ $("castForm").addEventListener("submit", async (event) => {
     id,
     store_id: state.store,
     name: $("castName").value.trim(),
+photo_data: state.pendingPhoto,
     created_at: existing?.created_at || new Date().toISOString(),
     updated_at: new Date().toISOString()
   };
