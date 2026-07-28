@@ -67,7 +67,7 @@
     if (cast.photo_data) {
       const image = await ImageUtils.loadImage(cast.photo_data);
 
-      ImageUtils.drawCover(context, image, slot.x, slot.y, slot.width, slot.height, 0.38);
+      ImageUtils.drawCover(context, image, slot.x, slot.y, slot.width, slot.height, 0.05);
     } else {
       context.fillStyle = "rgba(15, 15, 20, 0.96)";
       context.fillRect(slot.x, slot.y, slot.width, slot.height);
