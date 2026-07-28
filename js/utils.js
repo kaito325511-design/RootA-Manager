@@ -29,35 +29,33 @@ const ImageUtils = {
     });
   },
 
-  drawCover(context, image, x, y, width, height, focusY = 0.12) {
-    const sourceRatio = image.width / image.height;
-    const targetRatio = width / height;
-    let sourceWidth = image.width;
-    let sourceHeight = image.height;
-    let sourceX = 0;
-    let sourceY = 0;
+  drawCover(context, image, x, y, width, height, focusY = 0.18) {
+  const imgW = image.width;
+  const imgH = image.height;
 
-    if (sourceRatio > targetRatio) {
-      sourceWidth = image.height * targetRatio;
-      sourceX = (image.width - sourceWidth) / 2;
-    } else {
-      sourceHeight = image.width / targetRatio;
-      sourceY = Math.max(0, (image.height - sourceHeight) * 0.12);
-      sourceY = Math.min(sourceY, image.height - sourceHeight);
-    }
+  const scale = Math.max(width / imgW, height / imgH);
 
-    context.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      x,
-      y,
-      width,
-      height
-    );
-  },
+  const cropW = width / scale;
+  const cropH = height / scale;
+
+  let sourceX = (imgW - cropW) / 2;
+  let sourceY = (imgH - cropH) * focusY;
+
+  sourceX = Math.max(0, Math.min(sourceX, imgW - cropW));
+  sourceY = Math.max(0, Math.min(sourceY, imgH - cropH));
+
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    cropW,
+    cropH,
+    x,
+    y,
+    width,
+    height
+  );
+},
 
   formatDateForFile(dateValue) {
     return String(dateValue || "").replaceAll("-", "");
