@@ -42,7 +42,8 @@ const ImageUtils = {
       sourceX = (image.width - sourceWidth) / 2;
     } else {
       sourceHeight = image.width / targetRatio;
-      sourceY = Math.max(0, (image.height - sourceHeight) * 0.24);
+      sourceY = Math.max(0, (image.height - sourceHeight) * 0.12);
+      sourceY = Math.min(sourceY, image.height - sourceHeight);
     }
 
     context.drawImage(
