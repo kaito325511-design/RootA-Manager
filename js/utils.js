@@ -29,7 +29,7 @@ const ImageUtils = {
     });
   },
 
-  drawCover(context, image, x, y, width, height) {
+  drawCover(context, image, x, y, width, height, focusY = 0.12) {
     const sourceRatio = image.width / image.height;
     const targetRatio = width / height;
     let sourceWidth = image.width;
