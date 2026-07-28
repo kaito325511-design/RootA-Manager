@@ -38,14 +38,14 @@ const ShiftImageGenerator = {
     const scaleY = height / 1536;
 
     const positions = [
-      { x: 51, y: 424, width: 282, height: 414 },
-      { x: 371, y: 424, width: 284, height: 414 },
-      { x: 691, y: 424, width: 283, height: 414 },
+  { x: 58,  y: 438, width: 268, height: 390 },
+  { x: 379, y: 438, width: 268, height: 390 },
+  { x: 699, y: 438, width: 268, height: 390 },
 
-      { x: 51, y: 925, width: 282, height: 423 },
-      { x: 371, y: 925, width: 284, height: 423 },
-      { x: 691, y: 925, width: 283, height: 423 }
-    ];
+  { x: 58,  y: 939, width: 268, height: 399 },
+  { x: 379, y: 939, width: 268, height: 399 },
+  { x: 699, y: 939, width: 268, height: 399 }
+];
 
     return positions.map((slot) => ({
       x: slot.x * scaleX,
@@ -67,7 +67,7 @@ const ShiftImageGenerator = {
     if (cast.photo_data) {
       const image = await ImageUtils.loadImage(cast.photo_data);
 
-      ImageUtils.drawCover(
+      ImageUtils.drawCover(context, image, slot.x, slot.y, slot.width, slot.height, 0.38);
         context,
         image,
         slot.x,
