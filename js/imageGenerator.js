@@ -18,7 +18,7 @@ const ShiftImageGenerator = {
     const context = canvas.getContext("2d");
     context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-    const slots = this.getSlots(canvas.width, canvas.height);
+    E = this.getSlots(canvas.width, canvas.height);
     const selectedCasts = casts.slice(0, 6);
 
     for (let index = 0; index < selectedCasts.length; index += 1) {
@@ -32,25 +32,27 @@ const ShiftImageGenerator = {
   },
 
   getSlots(width, height) {
-    const marginX = width * 0.075;
-    const gapX = width * 0.035;
-    const cardWidth = (width - marginX * 2 - gapX * 2) / 3;
-    const top = height * 0.29;
-    const bottomMargin = height * 0.075;
-    const gapY = height * 0.035;
-    const cardHeight = (height - top - bottomMargin - gapY) / 2;
+  const scaleX = width / 1024;
+  const scaleY = height / 1536;
 
-    return Array.from({ length: 6 }, (_, index) => {
-      const column = index % 3;
-      const row = Math.floor(index / 3);
-      return {
-        x: marginX + column * (cardWidth + gapX),
-        y: top + row * (cardHeight + gapY),
-        width: cardWidth,
-        height: cardHeight
-      };
-    });
-  },
+  const positions = [
+    { x: 51,  y: 424, width: 282, height: 414 },
+    { x: 371, y: 424, width: 284, height: 414 },
+    { x: 691, y: 424, width: 283, height: 414 },
+
+    { x: 51,  y: 925, width: 282, height: 423 },
+    { x: 371, y: 925, width: 284, height: 423 },
+    { x: 691, y: 925, width: 283, height: 423 }
+  ];
+
+  return positions.map((slot) => ({
+    x: slot.x * scaleX,
+    y: slot.y * scaleY,
+    width: slot.width * scaleX,
+    height: slot.height * scaleY
+  }));
+},
+   
 
   async drawCast(context, cast, slot, canvasWidth) {
     const radius = Math.max(12, canvasWidth * 0.016);
