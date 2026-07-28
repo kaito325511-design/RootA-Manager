@@ -1,0 +1,134 @@
+const ShiftImageGenerator = {
+  lastDataUrl: null,
+
+  async generate({ templateData, casts, storeName, dateValue }) {
+    if (!templateData) {
+      throw new Error("先に背景テンプレートを設定してください。");
+    }
+
+    if (!casts.length) {
+      throw new Error("画像に入れるキャストを選択してください。");
+    }
+
+    const background = await ImageUtils.loadImage(templateData);
+    const canvas = document.createElement("canvas");
+    canvas.width = background.naturalWidth || background.width;
+    canvas.height = background.naturalHeight || background.height;
+
+    const context = canvas.getContext("2d");
+    context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+    const slots = this.getSlots(canvas.width, canvas.height);
+    const selectedCasts = casts.slice(0, 6);
+
+    for (let index = 0; index < selectedCasts.length; index += 1) {
+      const cast = selectedCasts[index];
+      const slot = slots[index];
+      await this.drawCast(context, cast, slot, canvas.width);
+    }
+
+    this.lastDataUrl = canvas.toDataURL("image/png");
+    return this.lastDataUrl;
+  },
+
+  getSlots(width, height) {
+    const marginX = width * 0.075;
+    const gapX = width * 0.035;
+    const cardWidth = (width - marginX * 2 - gapX * 2) / 3;
+    const top = height * 0.29;
+    const bottomMargin = height * 0.075;
+    const gapY = height * 0.035;
+    const cardHeight = (height - top - bottomMargin - gapY) / 2;
+
+    return Array.from({ length: 6 }, (_, index) => {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      return {
+        x: marginX + column * (cardWidth + gapX),
+        y: top + row * (cardHeight + gapY),
+        width: cardWidth,
+        height: cardHeight
+      };
+    });
+  },
+
+  async drawCast(context, cast, slot, canvasWidth) {
+    const radius = Math.max(12, canvasWidth * 0.016);
+    const labelHeight = slot.height * 0.18;
+
+    context.save();
+    this.roundedRectPath(context, slot.x, slot.y, slot.width, slot.height, radius);
+    context.clip();
+
+    if (cast.photo_data) {
+      const image = await ImageUtils.loadImage(cast.photo_data);
+      ImageUtils.drawCover(context, image, slot.x, slot.y, slot.width, slot.height);
+    } else {
+      context.fillStyle = "rgba(15, 23, 42, 0.94)";
+      context.fillRect(slot.x, slot.y, slot.width, slot.height);
+      context.fillStyle = "rgba(255,255,255,0.55)";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = `700 ${Math.max(20, slot.width * 0.09)}px sans-serif`;
+      context.fillText("写真なし", slot.x + slot.width / 2, slot.y + slot.height / 2);
+    }
+
+    const gradient = context.createLinearGradient(0, slot.y + slot.height - labelHeight * 1.8, 0, slot.y + slot.height);
+    gradient.addColorStop(0, "rgba(0,0,0,0)");
+    gradient.addColorStop(1, "rgba(0,0,0,0.88)");
+    context.fillStyle = gradient;
+    context.fillRect(slot.x, slot.y + slot.height - labelHeight * 1.8, slot.width, labelHeight * 1.8);
+
+    context.restore();
+
+    context.save();
+    context.strokeStyle = "rgba(255,255,255,0.88)";
+    context.lineWidth = Math.max(2, canvasWidth * 0.003);
+    this.roundedRectPath(context, slot.x, slot.y, slot.width, slot.height, radius);
+    context.stroke();
+
+    context.fillStyle = "#ffffff";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.shadowColor = "rgba(0,0,0,0.8)";
+    context.shadowBlur = 8;
+    context.font = `800 ${Math.max(24, slot.width * 0.105)}px "Noto Sans JP", sans-serif`;
+    this.fillTextFit(context, cast.name, slot.x + slot.width / 2, slot.y + slot.height - labelHeight / 2, slot.width * 0.88);
+    context.restore();
+  },
+
+  roundedRectPath(context, x, y, width, height, radius) {
+    const safeRadius = Math.min(radius, width / 2, height / 2);
+    context.beginPath();
+    context.moveTo(x + safeRadius, y);
+    context.arcTo(x + width, y, x + width, y + height, safeRadius);
+    context.arcTo(x + width, y + height, x, y + height, safeRadius);
+    context.arcTo(x, y + height, x, y, safeRadius);
+    context.arcTo(x, y, x + width, y, safeRadius);
+    context.closePath();
+  },
+
+  fillTextFit(context, text, x, y, maxWidth) {
+    const originalSize = Number.parseFloat(context.font.match(/([\d.]+)px/)?.[1] || "24");
+    let size = originalSize;
+
+    while (context.measureText(text).width > maxWidth && size > 14) {
+      size -= 2;
+      context.font = context.font.replace(/[\d.]+px/, `${size}px`);
+    }
+
+    context.fillText(text, x, y);
+  },
+
+  download({ storeName, dateValue }) {
+    if (!this.lastDataUrl) {
+      throw new Error("先に出勤画像を作成してください。");
+    }
+
+    const link = document.createElement("a");
+    const safeStoreName = String(storeName || "店舗").replace(/[\\/:*?"<>|]/g, "_");
+    link.href = this.lastDataUrl;
+    link.download = `${safeStoreName}_出勤画像_${ImageUtils.formatDateForFile(dateValue)}.png`;
+    link.click();
+  }
+};

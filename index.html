@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111827">
-  <title>RootA Manager v5</title>
+  <title>RootA Manager v6</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -12,7 +12,7 @@
   <header class="app-header">
     <div>
       <p class="eyebrow">店舗管理</p>
-      <h1>RootA Manager v5</h1>
+      <h1>RootA Manager v6</h1>
     </div>
     <div id="syncStatus" class="status">確認中</div>
   </header>
@@ -26,17 +26,17 @@
     <nav class="tabs" aria-label="画面切替">
       <button class="tab active" data-tab="casts">キャスト管理</button>
       <button class="tab" data-tab="shifts">出勤管理</button>
+      <button class="tab" data-tab="images">出勤画像</button>
     </nav>
 
     <section id="castsPanel" class="panel active">
       <div class="section-heading">
         <div>
           <h2>キャスト管理</h2>
-          <p>店舗ごとにキャストと写真を登録・編集できます。</p>
+          <p>店舗ごとにキャストを登録・編集できます。</p>
         </div>
         <button id="addCastButton" class="primary">＋ キャスト追加</button>
       </div>
-
       <div id="castsList" class="list"></div>
       <div id="castsEmpty" class="empty hidden">まだキャストが登録されていません。</div>
     </section>
@@ -60,30 +60,81 @@
       <div id="shiftsList" class="list"></div>
       <div id="shiftsEmpty" class="empty hidden">この日の出勤登録はありません。</div>
     </section>
+
+    <section id="imagesPanel" class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>出勤画像</h2>
+          <p>出勤キャストを最大6人選び、投稿用PNGを作成します。</p>
+        </div>
+      </div>
+
+      <div class="image-settings-grid">
+        <section class="card image-setting-card">
+          <div class="setting-title-row">
+            <div>
+              <h3>1. 背景テンプレート</h3>
+              <p id="templateStatus" class="hint">未設定</p>
+            </div>
+            <button id="changeTemplateButton" class="secondary">画像を変更</button>
+          </div>
+          <input id="templateFileInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          <div id="templatePreview" class="template-preview empty-preview">背景画像を設定してください</div>
+        </section>
+
+        <section class="card image-setting-card">
+          <h3>2. 作成する日</h3>
+          <label>
+            日付
+            <input id="imageDate" type="date">
+          </label>
+          <p class="hint">出勤管理に登録されたキャストが下に表示されます。</p>
+        </section>
+      </div>
+
+      <section class="card image-setting-card image-cast-section">
+        <div class="setting-title-row">
+          <div>
+            <h3>3. キャストを選択</h3>
+            <p id="selectionCount" class="hint">0 / 6人選択中</p>
+          </div>
+          <button id="selectAllImageCastsButton" class="secondary">全員選択</button>
+        </div>
+        <div id="imageCastList" class="image-cast-list"></div>
+        <div id="imageCastsEmpty" class="empty hidden">この日の出勤登録がありません。</div>
+      </section>
+
+      <div class="image-action-row">
+        <button id="generateImageButton" class="primary image-generate-button">出勤画像を作成</button>
+      </div>
+
+      <section id="imageResultSection" class="card image-result hidden">
+        <div class="setting-title-row">
+          <div>
+            <h3>完成画像</h3>
+            <p class="hint">長押し保存ではなく、下のボタンでPNG保存できます。</p>
+          </div>
+          <button id="downloadImageButton" class="primary">PNGを保存</button>
+        </div>
+        <div id="imagePreview" class="generated-preview"></div>
+      </section>
+    </section>
   </main>
 
   <dialog id="castDialog">
     <form id="castForm" method="dialog">
       <h3 id="castDialogTitle">キャスト追加</h3>
       <input id="castId" type="hidden">
-
       <label>
         キャスト名
         <input id="castName" maxlength="40" required placeholder="例：あおい">
       </label>
-
       <label>
         写真
         <input id="castPhoto" type="file" accept="image/*">
       </label>
-
-      <div class="photo-preview-wrap">
-        <img id="castPhotoPreview" class="photo-preview hidden" alt="写真プレビュー">
-        <button id="removePhotoButton" type="button" class="secondary hidden">写真を削除</button>
-      </div>
-
-      <p class="hint">写真は自動で縮小して保存します。</p>
-
+      <img id="castPhotoPreview" class="photo-preview hidden" alt="写真プレビュー">
+      <button id="removePhotoButton" type="button" class="secondary hidden">写真を削除</button>
       <div class="dialog-actions">
         <button type="button" class="secondary" data-close="castDialog">キャンセル</button>
         <button type="submit" class="primary">保存</button>
@@ -94,29 +145,24 @@
   <dialog id="shiftDialog">
     <form id="shiftForm" method="dialog">
       <h3>出勤追加</h3>
-
       <label>
         キャスト
         <select id="shiftCast" required></select>
       </label>
-
       <div class="time-grid">
         <label>
           出勤
           <input id="shiftStart" type="time" required>
         </label>
-
         <label>
           退勤
           <input id="shiftEnd" type="time">
         </label>
       </div>
-
       <label>
         メモ
         <input id="shiftMemo" maxlength="100" placeholder="任意">
       </label>
-
       <div class="dialog-actions">
         <button type="button" class="secondary" data-close="shiftDialog">キャンセル</button>
         <button type="submit" class="primary">保存</button>
@@ -126,6 +172,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/templateManager.js"></script>
+  <script src="js/imageGenerator.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

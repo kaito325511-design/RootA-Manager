@@ -7,7 +7,8 @@ const state = {
   shifts: [],
   db: null,
   online: false,
-  pendingPhoto: null
+  pendingPhoto: null,
+  imageSelectedCastIds: []
 };
 
 function uid() {
@@ -324,10 +325,73 @@ function renderShifts() {
   }).join("");
 }
 
+function getImageDate() {
+  return $("imageDate")?.value || $("shiftDate").value;
+}
+
+function getImageDayCasts() {
+  const date = getImageDate();
+  const castMap = new Map(state.casts.map((cast) => [cast.id, cast]));
+  const seen = new Set();
+
+  return state.shifts
+    .filter((shift) => shift.store_id === state.store && shift.shift_date === date)
+    .map((shift) => castMap.get(shift.cast_id))
+    .filter((cast) => cast && !seen.has(cast.id) && seen.add(cast.id));
+}
+
+function renderTemplatePreview() {
+  const templateData = ShiftTemplateManager.load(state.store);
+  const preview = $("templatePreview");
+  const status = $("templateStatus");
+
+  if (templateData) {
+    preview.classList.remove("empty-preview");
+    preview.innerHTML = `<img src="${templateData}" alt="${escapeHtml(state.store)}の背景テンプレート">`;
+    status.textContent = `${state.store}用の背景を設定済み`;
+  } else {
+    preview.classList.add("empty-preview");
+    preview.textContent = "背景画像を設定してください";
+    status.textContent = `${state.store}用は未設定`;
+  }
+}
+
+function renderImageCasts() {
+  const casts = getImageDayCasts();
+  const validIds = new Set(casts.map((cast) => cast.id));
+  state.imageSelectedCastIds = state.imageSelectedCastIds.filter((id) => validIds.has(id));
+
+  if (!state.imageSelectedCastIds.length && casts.length) {
+    state.imageSelectedCastIds = casts.slice(0, 6).map((cast) => cast.id);
+  }
+
+  $("imageCastsEmpty").classList.toggle("hidden", casts.length > 0);
+  $("imageCastList").innerHTML = casts.map((cast) => {
+    const selected = state.imageSelectedCastIds.includes(cast.id);
+    return `
+      <button type="button" class="image-cast-card ${selected ? "selected" : ""}" data-image-cast-id="${cast.id}" aria-pressed="${selected}">
+        ${cast.photo_data
+          ? `<img src="${cast.photo_data}" alt="${escapeHtml(cast.name)}">`
+          : `<span class="image-cast-photo-empty">写真なし</span>`}
+        <span>${escapeHtml(cast.name)}</span>
+        <small>${selected ? "選択中" : "タップで選択"}</small>
+      </button>`;
+  }).join("");
+
+  $("selectionCount").textContent = `${state.imageSelectedCastIds.length} / 6人選択中`;
+  $("selectAllImageCastsButton").textContent = state.imageSelectedCastIds.length ? "選択解除" : "全員選択";
+}
+
+function renderImagePanel() {
+  renderTemplatePreview();
+  renderImageCasts();
+}
+
 function renderAll() {
   renderCasts();
   renderShiftCastOptions();
   renderShifts();
+  renderImagePanel();
 }
 
 function openCastDialog(cast = null) {
@@ -404,6 +468,73 @@ document.addEventListener("click", async (event) => {
       "active",
       tab.dataset.tab === "shifts"
     );
+
+    $("imagesPanel").classList.toggle(
+      "active",
+      tab.dataset.tab === "images"
+    );
+
+    if (tab.dataset.tab === "images") {
+      renderImagePanel();
+    }
+  }
+
+  const imageCastButton = event.target.closest("[data-image-cast-id]");
+
+  if (imageCastButton) {
+    const castId = imageCastButton.dataset.imageCastId;
+    const selectedIndex = state.imageSelectedCastIds.indexOf(castId);
+
+    if (selectedIndex >= 0) {
+      state.imageSelectedCastIds.splice(selectedIndex, 1);
+    } else if (state.imageSelectedCastIds.length >= 6) {
+      alert("画像に入れられるのは最大6人です。");
+    } else {
+      state.imageSelectedCastIds.push(castId);
+    }
+
+    renderImageCasts();
+  }
+
+  if (event.target.id === "selectAllImageCastsButton") {
+    const casts = getImageDayCasts();
+    state.imageSelectedCastIds = state.imageSelectedCastIds.length
+      ? []
+      : casts.slice(0, 6).map((cast) => cast.id);
+    renderImageCasts();
+  }
+
+  if (event.target.id === "generateImageButton") {
+    const selectedCasts = state.imageSelectedCastIds
+      .map((id) => state.casts.find((cast) => cast.id === id))
+      .filter(Boolean);
+
+    try {
+      event.target.disabled = true;
+      event.target.textContent = "作成中…";
+      const dataUrl = await ShiftImageGenerator.generate({
+        templateData: ShiftTemplateManager.load(state.store),
+        casts: selectedCasts,
+        storeName: state.store,
+        dateValue: getImageDate()
+      });
+      $("imagePreview").innerHTML = `<img src="${dataUrl}" alt="完成した出勤画像">`;
+      $("imageResultSection").classList.remove("hidden");
+      $("imageResultSection").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      event.target.disabled = false;
+      event.target.textContent = "出勤画像を作成";
+    }
+  }
+
+  if (event.target.id === "downloadImageButton") {
+    try {
+      ShiftImageGenerator.download({ storeName: state.store, dateValue: getImageDate() });
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
   const closeButton = event.target.closest("[data-close]");
@@ -475,11 +606,23 @@ document.addEventListener("click", async (event) => {
 
 $("storeSelect").addEventListener("change", () => {
   state.store = $("storeSelect").value;
+  state.imageSelectedCastIds = [];
+  ShiftImageGenerator.lastDataUrl = null;
+  $("imageResultSection").classList.add("hidden");
   localStorage.setItem("roota_store", state.store);
   renderAll();
 });
 
-$("shiftDate").addEventListener("change", renderShifts);
+$("shiftDate").addEventListener("change", () => {
+  renderShifts();
+});
+
+$("imageDate").addEventListener("change", () => {
+  state.imageSelectedCastIds = [];
+  ShiftImageGenerator.lastDataUrl = null;
+  $("imageResultSection").classList.add("hidden");
+  renderImageCasts();
+});
 
 $("castForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -553,9 +696,18 @@ $("shiftForm").addEventListener("submit", async (event) => {
 (async function initialize() {
   renderStores();
 
-  $("shiftDate").value = new Date()
-    .toISOString()
-    .slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  $("shiftDate").value = today;
+  $("imageDate").value = today;
+
+  ShiftTemplateManager.init({
+    getStoreId: () => state.store,
+    onTemplateChanged: () => {
+      ShiftImageGenerator.lastDataUrl = null;
+      $("imageResultSection").classList.add("hidden");
+      renderTemplatePreview();
+    }
+  });
 
   await initDb();
   await loadData();
