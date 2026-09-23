@@ -1,5 +1,18 @@
   const ShiftImageGenerator = {
   lastDataUrl: null,
+    getPaths(storeName) {
+    if (storeName === "エクラス") {
+      return {
+        background: "assets/templates/eclas_background.png?v=2",
+        overlay: "assets/templates/eclas_overlay.png?v=2"
+      };
+    }
+
+    return {
+      background: null,
+      overlay: null
+    };
+  },
 
   async generate({ templateData, casts, storeName, dateValue }) {
     if (!templateData) {
@@ -10,7 +23,14 @@
       throw new Error("画像に入れるキャストを選択してください。");
     }
 
-    const background = await ImageUtils.loadImage(templateData);
+    const paths = this.getPaths(storeName);
+const backgroundSource = paths.background || templateData;
+const overlaySource = paths.overlay;
+
+const background = await ImageUtils.loadImage(backgroundSource);
+const overlay = overlaySource
+  ? await ImageUtils.loadImage(overlaySource)
+  : null;
     const canvas = document.createElement("canvas");
 
     canvas.width = background.naturalWidth || background.width;
@@ -19,7 +39,7 @@
     const context = canvas.getContext("2d");
     context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-    const slots = this.getSlots(canvas.width, canvas.height);
+    const slots = this.getSlots(canvas.width, canvas.height, storeName);
     const selectedCasts = casts.slice(0, 6);
 
     for (let index = 0; index < selectedCasts.length; index += 1) {
@@ -28,12 +48,36 @@
 
       await this.drawCast(context, cast, slot, canvas.width);
     }
+    if (overlay) {
+  context.drawImage(overlay, 0, 0, canvas.width, canvas.height);
+}
 
     this.lastDataUrl = canvas.toDataURL("image/png");
     return this.lastDataUrl;
   },
 
-  getSlots(width, height) {
+  getSlots(width, height, storeName) {
+    if (storeName === "エクラス") {
+  const scaleX = width / 1024;
+  const scaleY = height / 1536;
+
+  const positions = [
+    { x: 67,  y: 456, width: 266, height: 341 },
+    { x: 394, y: 456, width: 256, height: 341 },
+    { x: 696, y: 456, width: 264, height: 341 },
+
+    { x: 67,  y: 909, width: 266, height: 347 },
+    { x: 394, y: 909, width: 256, height: 347 },
+    { x: 696, y: 909, width: 264, height: 347 }
+  ];
+
+  return positions.map(slot => ({
+    x: slot.x * scaleX,
+    y: slot.y * scaleY,
+    w: slot.width * scaleX,
+    h: slot.height * scaleY
+  }));
+}
     const scaleX = width / 1024;
     const scaleY = height / 1536;
 
