@@ -74,8 +74,8 @@ const overlay = overlaySource
   return positions.map(slot => ({
     x: slot.x * scaleX,
     y: slot.y * scaleY,
-    w: slot.width * scaleX,
-    h: slot.height * scaleY
+    width: slot.width * scaleX,
+    height: slot.height * scaleY
   }));
 }
     const scaleX = width / 1024;
