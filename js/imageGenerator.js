@@ -46,10 +46,16 @@ const overlay = overlaySource
       const cast = selectedCasts[index];
       const slot = slots[index];
 
-      await this.drawCast(context, cast, slot, canvas.width);
+      await this.drawCast(context, cast, slot, canvas.width, false);
     }
     if (overlay) {
   context.drawImage(overlay, 0, 0, canvas.width, canvas.height);
+}
+    for (let index = 0; index < selectedCasts.length; index += 1) {
+  const cast = selectedCasts[index];
+  const slot = slots[index];
+
+  this.drawCastName(context, cast, slot, canvas.width);
 }
 
     this.lastDataUrl = canvas.toDataURL("image/png");
@@ -99,7 +105,7 @@ const overlay = overlaySource
     }));
   },
 
-  async drawCast(context, cast, slot, canvasWidth) {
+  async drawCast(context, cast, slot, canvasWidth, drawName = true) {
     const labelHeight = slot.height * 0.16;
 
     context.save();
@@ -151,7 +157,13 @@ const overlay = overlaySource
 
     context.save();
 
-    context.fillStyle = "#ffffff";
+    
+  },
+
+    
+    drawCastName(context, cast, slot, canvasWidth) {
+      const labelHeight = slot.height * 0.16;
+context.fillStyle = "#ffffff";
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.shadowColor = "rgba(0,0,0,0.95)";
@@ -169,7 +181,7 @@ const overlay = overlaySource
     );
 
     context.restore();
-  },
+},
 
   fillTextFit(context, text, x, y, maxWidth) {
     const match = context.font.match(/([\d.]+)px/);
